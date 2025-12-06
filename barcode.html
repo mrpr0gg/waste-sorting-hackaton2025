@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Сканирование штрихкода</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Quagga2 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: #f7d84b;
+        font-family: "Inter", sans-serif;
+        text-align: center;
+    }
+
+    #scanner-container {
+        width: 90vw;
+        max-width: 420px;
+        height: 300px;
+        margin: 20px auto;
+        border-radius: 20px;
+        overflow: hidden;
+        background: black;
+        position: relative;
+    }
+
+    #result-card {
+        display: none;
+        background: white;
+        padding: 20px;
+        border-radius: 20px;
+        max-width: 450px;
+        margin: 25px auto;
+        text-align: left;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    }
+</style>
+</head>
+<body>
+
+<h1>Сканирование штрихкода</h1>
+
+<div id="scanner-container"></div>
+
+<div id="result-card">
+    <h2 id="product-name"></h2>
+    <p id="barcode-value"></p>
+    <p id="packaging"></p>
+</div>
+
+<button onclick="location.href='index.html'"
+style="padding:12px 26px;border-radius:30px;border:2px solid black;margin-top:20px;font-size:18px;">
+⬅ На главную
+</button>
+
+<script>
+function startScanner() {
+
+    Quagga.init({
+        inputStream: {
+            name: "Live",
+            type: "LiveStream",
+            target: document.getElementById("scanner-container"),
+            constraints: {
+                facingMode: "environment"
+            }
+        },
+        decoder: {
+            readers: [
+                "ean_reader",
+                "ean_8_reader",
+                "code_128_reader",
+                "code_39_reader",
+                "upc_reader",
+                "upc_e_reader"
+            ]
+        }
+    }, function(err) {
+        if (err) {
+            console.error(err);
+            alert("Ошибка запуска камеры. Проверь разрешения.");
+            return;
+        }
+        Quagga.start();
+    });
+
+    Quagga.onDetected(data => {
+        const barcode = data.codeResult.code;
+        console.log("Найден штрихкод:", barcode);
+
+        Quagga.stop();
+        fetchProduct(barcode);
+    });
+}
+
+async function fetchProduct(barcode) {
+    const card = document.getElementById("result-card");
+
+    try {
+        const r = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+        const d = await r.json();
+
+        document.getElementById("product-name").textContent =
+            d.product?.product_name || "Товар не найден";
+
+        document.getElementById("barcode-value").textContent = "Штрихкод: " + barcode;
+
+        document.getElementById("packaging").textContent =
+            "Упаковка: " + (d.product?.packaging || "Нет данных");
+
+        card.style.display = "block";
+
+    } catch (e) {
+        alert("Ошибка загрузки данных");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", startScanner);
+</script>
+
+</body>
+</html>

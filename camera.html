@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Камера</title>
+
+    <style>
+        body {
+            background: #f7d85a;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+
+        video {
+            margin-top: 40px;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 20px;
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.3);
+        }
+
+        button {
+            margin-top: 30px;
+            padding: 18px 40px;
+            font-size: 24px;
+            border-radius: 40px;
+            background: white;
+            border: 2px solid black;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ВАЖНО: id="camera" -->
+    <video id="camera" autoplay playsinline></video>
+
+    <button onclick="takePhoto()">📸 Сделать снимок</button>
+
+    <!-- Используем этот canvas -->
+    <canvas id="snapshot" style="display:none;"></canvas>
+
+<script>
+let video = document.getElementById("camera");
+let canvas = document.getElementById("snapshot");
+let imageBase64 = null;
+
+// запуск камеры
+navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => video.srcObject = stream)
+    .catch(err => alert("Ошибка камеры: " + err));
+
+// кнопка снять фото
+function takePhoto() {
+    console.log("Делаем снимок...");
+
+    let w = video.videoWidth;
+    let h = video.videoHeight;
+
+    canvas.width = w;
+    canvas.height = h;
+
+    let ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, w, h);
+
+    imageBase64 = canvas.toDataURL("image/png");
+    console.log("Линия base64:", imageBase64.length);
+
+    sendToServer();
+}
+
+// отправка в /analyze
+async function sendToServer() {
+    if (!imageBase64) {
+        alert("Ошибка: изображение не создано!");
+        return;
+    }
+
+    console.log("Отправляю запрос на сервер...");
+
+    try {
+        let response = await fetch("http://localhost:3000/analyze", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ image: imageBase64 })
+        });
+
+        console.log("Ответ сервера:", response.status);
+
+        let data = await response.json();
+        console.log("Сервер вернул:", data);
+
+        localStorage.setItem("waste_json", JSON.stringify(data));
+        window.location.href = "result.html";
+
+    } catch (err) {
+        alert("Ошибка при отправке на сервер: " + err);
+    }
+}
+</script>
+
+</body>
+</html>

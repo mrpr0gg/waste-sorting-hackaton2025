@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результат анализа</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f6d95c;
+            font-family: "Inter", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-top: 30px;
+            font-size: 38px;
+            font-weight: 700;
+        }
+
+        .card {
+            margin-top: 30px;
+            background: white;
+            border-radius: 28px;
+            padding: 30px;
+            width: 85%;
+            max-width: 650px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+        }
+
+        .row {
+            margin-bottom: 18px;
+            font-size: 24px;
+        }
+
+        .label {
+            font-weight: 700;
+            font-size: 26px;
+        }
+
+        .container-box {
+            background: #eee;
+            padding: 15px;
+            border-radius: 18px;
+            font-size: 24px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        ul {
+            font-size: 20px;
+        }
+
+        button {
+            margin-top: 35px;
+            padding: 15px 35px;
+            font-size: 24px;
+            border-radius: 40px;
+            border: 2px solid black;
+            background: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .error {
+            font-size: 26px;
+            color: red;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Результат анализа</h1>
+
+    <div id="errorBlock" class="error" style="display:none;"></div>
+
+    <div id="resultCard" class="card" style="display:none;">
+        
+        <div class="row">
+            <span class="label">Предмет:</span>
+            <span id="objectText"></span>
+        </div>
+
+        <div class="row">
+            <span class="label">Материал:</span>
+            <span id="materialText"></span>
+        </div>
+
+        <div id="containerBox" class="container-box"></div>
+
+        <div class="instructions">
+            <span class="label">Инструкция по подготовке:</span>
+            <ul id="instructionList"></ul>
+        </div>
+    </div>
+
+    <button onclick="location.href='camera.html'">Сделать новое фото</button>
+
+
+<script>
+
+// ---- ОДИН ЭМОДЗИ (строгая фильтрация) ----
+function getContainerEmoji(text) {
+    if (!text) return "❓";
+    text = text.toLowerCase();
+
+    if (text.includes("жёлт") || text.includes("желт")) return "🟡";
+    if (text.includes("син")) return "🔵";
+    if (text.includes("зел")) return "🟢";
+    if (text.includes("металл")) return "⚪";
+    if (text.includes("несорт")) return "⚫";
+
+    return "❓";
+}
+
+// --- Получаем JSON от сервера ---
+let raw = localStorage.getItem("waste_json");
+let parsed = null;
+
+try {
+    parsed = JSON.parse(raw);
+} catch (e) {
+    document.getElementById("errorBlock").textContent =
+        "Ошибка: сервер вернул некорректный JSON";
+    document.getElementById("errorBlock").style.display = "block";
+}
+
+// --- Если JSON корректный ---
+if (parsed) {
+    document.getElementById("resultCard").style.display = "block";
+
+    // Предмет (ВАЖНО: теперь parsed.item)
+    document.getElementById("objectText").textContent =
+        parsed.item || "Не удалось определить";
+
+    // Материал
+    document.getElementById("materialText").textContent =
+        parsed.material || "Неизвестно";
+
+    // Убираем эмодзи из контейнера (GPT иногда присылает свои)
+    let container = parsed.container || "не указан";
+    container = container.replace(/[\p{Extended_Pictographic}]/gu, "").trim();
+
+    // Эмодзи всегда один
+    document.getElementById("containerBox").textContent =
+        "Контейнер: " + getContainerEmoji(container) + " " + container;
+
+    // Инструкции
+    const list = document.getElementById("instructionList");
+    list.innerHTML = "";
+
+    if (Array.isArray(parsed.instructions) && parsed.instructions.length > 0) {
+        parsed.instructions.forEach(instr => {
+            let li = document.createElement("li");
+            li.textContent = instr;
+            list.appendChild(li);
+        });
+    } else {
+        let li = document.createElement("li");
+        li.textContent = "Нет инструкций";
+        list.appendChild(li);
+    }
+}
+
+</script>
+
+</body>
+</html>

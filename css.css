@@ -1,0 +1,65 @@
+/* Общие стили */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Inter", sans-serif;
+    background-color: #f7d84b; /* твой жёлтый фон */
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-top: 40px;
+}
+
+/* Логотип */
+.logo {
+    width: 45%;
+    max-width: 350px;
+    opacity: 0.85;
+    filter: drop-shadow(0 8px 15px rgba(0, 0, 0, 0.15));
+    margin-bottom: 40px;
+}
+
+/* Заголовок */
+.title {
+    font-size: 42px;
+    font-weight: 600;
+    margin-bottom: 45px;
+    color: #000;
+}
+
+/* Кнопки */
+.action-btn {
+    background: white;
+    border: 2px solid #222;
+    border-radius: 40px;
+    padding: 18px 40px;
+    margin: 15px 0;
+    font-size: 30px;
+    cursor: pointer;
+    transition: 0.2s;
+    width: 70%;
+    max-width: 550px;
+
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Анимация при наведении */
+.action-btn:hover {
+    transform: scale(1.03);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+/* Анимация при клике */
+.action-btn:active {
+    transform: scale(0.97);
+}
+
+@keyframes drop {
+    0% { transform: translateY(-200px); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateY(250px); }
+}
