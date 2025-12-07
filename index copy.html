@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Раздельный сбор</title>
+
+    <!-- Основные стили -->
+    <link rel="stylesheet" href="css.css">
+
+    <!-- Шрифт для заголовка -->
+    <link href="https://fonts.googleapis.com/css2?family=Jacques+Francois+Shadow&display=swap"
+          rel="stylesheet">
+
+    <style>
+    /* ==== АВАТАР В ПРАВОМ ВЕРХНЕМ УГЛУ (подвинут внутрь контейнера) ==== */
+    .avatar-btn {
+        position: absolute;
+        top: 40px;          /* ниже, на уровне логотипа */
+        right: 590px;        /* ближе к центру */
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        overflow: hidden;
+        cursor: pointer;
+        border: 3px solid white;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+        transition: transform 0.25s;
+        z-index: 20;
+    }
+
+    .avatar-btn:hover {
+        transform: scale(1.08);
+    }
+
+    .avatar-btn img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    </style>
+</head>
+
+<body>
+
+<!-- АВАТАР-КНОПКА -->
+<a id="avatarBtn" class="avatar-btn">
+    <img src="https://amiel.club/uploads/posts/2022-03/1647541516_1-amiel-club-p-milie-zhivotnie-kartinki-risunki-1.jpg" alt="avatar">
+</a>
+
+<!-- WELCOME OVERLAY -->
+<div id="welcome-overlay">
+    <div class="welcome-card">
+
+        <h1 id="welcomeTitle" class="welcome-title"></h1>
+
+        <input id="username-input"
+               type="text"
+               placeholder="Введите имя..."
+               class="welcome-input">
+
+        <button class="welcome-btn" onclick="saveName()">Начать</button>
+
+    </div>
+</div>
+
+<!-- MAIN MENU -->
+<div class="container">
+
+    <img src="logo.png" alt="Logo" class="logo">
+
+    <h1 class="title">Что вы выбрасываете?</h1>
+
+    <button class="action-btn" onclick="location.href='camera.html'">
+        📸 Сделать фото
+    </button>
+
+    <button class="action-btn" onclick="location.href='list.html'">
+        📦 Выбрать из списка
+    </button>
+
+    <button class="action-btn" onclick="adminAccess()">
+        🔐 Доступ администрации
+    </button>
+
+</div>
+
+<!-- Firebase -->
+<script type="module" src="firebase.js"></script>
+
+<script>
+/* ========================================
+    ЛОГИКА КНОПКИ-АВАТАРА (ПРОФИЛЬ)
+======================================== */
+const avatar = document.getElementById("avatarBtn");
+
+avatar.addEventListener("click", () => {
+    const username = localStorage.getItem("username");
+
+    if (!username) {
+        alert("Сначала введите имя!");
+        return;
+    }
+
+    const id = username.toLowerCase().trim();
+    window.location.href = `profile.html?id=${encodeURIComponent(id)}`;
+});
+
+
+/* ========================================
+    Анимация входа в режим администратора
+======================================== */
+function adminAccess() {
+    const overlay = document.createElement("div");
+    overlay.style.position = "fixed";
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = "100vw";
+    overlay.style.height = "100vh";
+    overlay.style.background = "rgba(0,0,0,0)";
+    overlay.style.transition = "background 0.9s ease";
+    overlay.style.zIndex = 9999;
+    document.body.appendChild(overlay);
+
+    const logo = document.createElement("img");
+    logo.src = "logo.png";
+    logo.style.position = "fixed";
+    logo.style.top = "50%";
+    logo.style.left = "50%";
+    logo.style.transform = "translate(-50%, -50%) scale(1.5)";
+    logo.style.opacity = 0;
+    logo.style.transition = "opacity 1.2s ease, transform 1.2s ease";
+    logo.style.zIndex = 10000;
+
+    document.body.appendChild(logo);
+
+    setTimeout(() => {
+        overlay.style.background = "rgba(0,0,0,1)";
+    }, 50);
+
+    setTimeout(() => {
+        logo.style.opacity = 1;
+        logo.style.transform = "translate(-50%, -50%) scale(1)";
+    }, 400);
+
+    setTimeout(() => {
+        window.location.href = "admin.html";
+    }, 1500);
+}
+</script>
+
+<!-- ⬇ Глобальный видео-лоадер -->
+<div id="loadingVideoOverlay">
+    <video id="loadingVideo" src="loading.mp4" autoplay muted playsinline></video>
+</div>
+
+<style>
+#loadingVideoOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: black;
+    display: none;        /* скрыт по умолчанию */
+    justify-content: center;
+    align-items: center;
+    z-index: 999999;
+}
+
+#loadingVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* чтобы видео заполняло экран */
+}
+</style>
+
+<!-- Полноэкранное видео-заглушка -->
+<video id="loadingVideo"
+       class="loading-video"
+       src="loading.mp4"
+       muted
+       playsinline>
+</video>
+
+
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результат анализа</title>
+
+    <!-- Подключаем Firebase (создание пользователя + addScanForCurrentUser) -->
+    <script type="module" src="firebase.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f6d95c;
+            font-family: "Inter", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-top: 30px;
+            font-size: 42px;
+            font-weight: 800;
+        }
+
+        .card {
+            margin-top: 30px;
+            background: rgba(255,255,255,0.55);
+            backdrop-filter: blur(18px);
+            border-radius: 28px;
+            padding: 35px;
+            width: 85%;
+            max-width: 650px;
+            box-shadow: 0 6px 22px rgba(0,0,0,0.22);
+        }
+
+        .row {
+            margin-bottom: 18px;
+            font-size: 26px;
+        }
+
+        .label {
+            font-weight: 700;
+            font-size: 28px;
+        }
+
+        .container-box {
+            background: rgba(255,255,255,0.8);
+            padding: 18px;
+            border-radius: 18px;
+            font-size: 26px;
+            text-align: center;
+            margin: 25px 0;
+            font-weight: 600;
+        }
+
+        ul {
+            font-size: 22px;
+            padding-left: 20px;
+        }
+
+        button {
+            margin-top: 25px;
+            width: 80%;
+            max-width: 500px;
+            padding: 18px;
+            font-size: 26px;
+            border-radius: 40px;
+            border: 2px solid black;
+            background: white;
+            cursor: pointer;
+            transition: 0.25s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        #next-btn {
+            margin-top: 10px;
+        }
+
+        .error {
+            font-size: 26px;
+            color: red;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Результат анализа</h1>
+
+<div id="errorBlock" class="error" style="display:none;"></div>
+
+<div id="resultCard" class="card" style="display:none;">
+
+    <div class="row">
+        <span class="label">Предмет:</span>
+        <span id="objectText"></span>
+    </div>
+
+    <div class="row">
+        <span class="label">Материал:</span>
+        <span id="materialText"></span>
+    </div>
+
+    <div id="containerBox" class="container-box"></div>
+
+    <div class="instructions">
+        <span class="label">Инструкция по подготовке:</span>
+        <ul id="instructionList"></ul>
+    </div>
+</div>
+
+<button onclick="location.href='camera.html'">Сделать новое фото</button>
+<button id="next-btn">Далее</button>
+
+
+<script>
+// ===============================
+//   УМНОЕ ОПРЕДЕЛЕНИЕ КОНТЕЙНЕРА
+// ===============================
+function normalizeContainer(raw) {
+    if (!raw) return "⚫ несортируемые отходы";
+
+    // убираем эмодзи, пробелы и приводим к нижнему регистру
+    let text = raw.replace(/[\p{Extended_Pictographic}]/gu, "").trim().toLowerCase();
+
+    // если уже пришла одна из наших канонических строк — просто вернём её
+    if (raw.includes("🟡") || text.includes("жёлтый контейнер") || text.includes("желтый контейнер")) {
+        return "🟡 жёлтый контейнер";
+    }
+    if (raw.includes("🔵") || text.includes("синий контейнер")) {
+        return "🔵 синий контейнер";
+    }
+    if (raw.includes("🟢") || text.includes("зелёный контейнер") || text.includes("зеленый контейнер")) {
+        return "🟢 зелёный контейнер";
+    }
+    if (raw.includes("⚪") || text.includes("металлический контейнер")) {
+        return "⚪ металлический контейнер";
+    }
+    if (raw.includes("⚫") || text.includes("несортируемые отходы")) {
+        return "⚫ несортируемые отходы";
+    }
+
+    // ------ эвристики по тексту от нейросети ------
+
+    // пластик / упаковка → жёлтый
+    if (
+        text.includes("пласт") ||
+        text.includes("pet") ||
+        text.includes("упаков")
+    ) {
+        return "🟡 жёлтый контейнер";
+    }
+
+    // стекло → синий
+    if (
+        text.includes("стекл") ||
+        text.includes("glass")
+    ) {
+        return "🔵 синий контейнер";
+    }
+
+    // бумага / картон → зелёный
+    if (
+        text.includes("бумаг") ||
+        text.includes("бумаж") ||
+        text.includes("картон") ||
+        text.includes("paper")
+    ) {
+        return "🟢 зелёный контейнер";
+    }
+
+    // металл / жестянка / алюминий → белый
+    if (
+        text.includes("металл") ||
+        text.includes("алюми") ||
+        text.includes("жестян")
+    ) {
+        return "⚪ металлический контейнер";
+    }
+
+    // всё остальное → несортируемые
+    return "⚫ несортируемые отходы";
+}
+
+// ===============================
+//    Загрузка результатов
+// ===============================
+let parsed = null;
+
+try {
+    parsed = JSON.parse(localStorage.getItem("waste_json"));
+} catch (e) {
+    parsed = null;
+}
+
+if (!parsed) {
+    const err = document.getElementById("errorBlock");
+    err.textContent = "Ошибка: данные не получены.";
+    err.style.display = "block";
+} else {
+    document.getElementById("resultCard").style.display = "block";
+
+    document.getElementById("objectText").textContent   = parsed.item     || "-";
+    document.getElementById("materialText").textContent = parsed.material || "-";
+
+    // нормализуем контейнер и показываем одну аккуратную строку
+    const normalizedContainer = normalizeContainer(parsed.container || "");
+    document.getElementById("containerBox").textContent = normalizedContainer;
+
+    const list = document.getElementById("instructionList");
+    list.innerHTML = "";
+    (parsed.instructions || []).forEach(x => {
+        const li = document.createElement("li");
+        li.textContent = x;
+        list.appendChild(li);
+    });
+}
+
+// ===============================
+//     Кнопка "Далее"
+// ===============================
+const nextBtn = document.getElementById("next-btn");
+
+nextBtn.addEventListener("click", async () => {
+    if (!parsed) {
+        alert("Ошибка: отсутствуют данные анализа.");
+        return;
+    }
+
+    const scanData = {
+        item:      parsed.item      ?? "",
+        material:  parsed.material  ?? "",
+        container: parsed.container ?? ""
+    };
+
+    console.log("➡ Отправляю скан в Firebase:", scanData);
+
+    // безопасный вызов: если по какой-то причине функция не подгрузилась — не ломаем кнопку
+    if (typeof window.addScanForCurrentUser === "function") {
+        try {
+            await window.addScanForCurrentUser(scanData);
+        } catch (e) {
+            console.error("Ошибка при addScanForCurrentUser:", e);
+        }
+    } else {
+        console.warn("addScanForCurrentUser не найден в window. Проверь загрузку firebase.js");
+    }
+
+    const username = localStorage.getItem("username");
+    if (!username) {
+        alert("Не найдено имя пользователя (localStorage.username)");
+        return;
+    }
+
+    const id   = username.toLowerCase().trim();
+    const link = `https://mysorstat.web.app/profile.html?id=${encodeURIComponent(id)}`;
+    localStorage.setItem("profile_link", link);
+
+    window.location.href = "qr.html";
+});
+</script>
+
+<!-- ⬇ Глобальный видео-лоадер -->
+<div id="loadingVideoOverlay">
+    <video id="loadingVideo" src="loading.mp4" autoplay muted playsinline></video>
+</div>
+
+<style>
+#loadingVideoOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: black;
+    display: none;        /* скрыт по умолчанию */
+    justify-content: center;
+    align-items: center;
+    z-index: 999999;
+}
+
+#loadingVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* чтобы видео заполняло экран */
+}
+</style>
+
+<script>
+window.showLoadingVideo = function () {
+    const overlay = document.getElementById("loadingVideoOverlay");
+    const video = document.getElementById("loadingVideo");
+    overlay.style.display = "flex";
+    video.currentTime = 0;   // запуск с начала
+    video.play();
+};
+
+window.hideLoadingVideo = function () {
+    document.getElementById("loadingVideoOverlay").style.display = "none";
+};
+</script>
+
+</body>
+</html>

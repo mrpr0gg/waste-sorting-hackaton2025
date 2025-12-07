@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Ваш QR-код</title>
+
+    <!-- QR библиотека -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        body {
+            background: #f7d84b;
+            font-family: "Inter", sans-serif;
+            text-align: center;
+            padding: 40px 10px;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+
+        .leaderboard {
+            background: rgba(255,255,255,0.55);
+            backdrop-filter: blur(18px);
+            width: 90%;
+            max-width: 450px;
+            margin: 0 auto 30px;
+            padding: 20px;
+            border-radius: 22px;
+            box-shadow: 0 6px 22px rgba(0,0,0,0.22);
+            animation: glow 3s infinite ease-in-out;
+        }
+
+        .leaderboard h2 {
+            font-size: 26px;
+            margin-bottom: 15px;
+        }
+
+        .lb-item {
+            background: rgba(255,255,255,0.8);
+            margin: 10px 0;
+            padding: 12px;
+            border-radius: 14px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        @keyframes glow {
+            0% { box-shadow: 0 0 15px rgba(255,255,200,0.4); }
+            50% { box-shadow: 0 0 35px rgba(255,255,255,0.9); }
+            100% { box-shadow: 0 0 15px rgba(255,255,200,0.4); }
+        }
+
+        #qr-wrapper {
+            margin-top: 25px;
+        }
+
+        #qrcode {
+            margin: 0 auto;
+            width: 256px;
+            height: 256px;
+        }
+
+        #qr-link:hover {
+            transform: scale(1.05);
+            transition: 0.2s;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Статистика и QR-код</h1>
+
+<div class="leaderboard">
+    <h2>🏆 Лидеры недели</h2>
+    <div id="lb-container"></div>
+</div>
+
+<h1>Ваш QR-код</h1>
+
+<div id="qr-wrapper">
+    <a id="qr-link" href="#" target="_blank">
+        <div id="qrcode"></div>
+    </a>
+</div>
+
+<!-- 🔥 НЕТ НИКАКОГО debug-link И НЕТ ССЫЛКИ -->
+
+<script type="module">
+import { db } from "./firebase.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+/* ===========================
+   QR
+=========================== */
+const profileLink = localStorage.getItem("profile_link");
+
+if (!profileLink) {
+    document.getElementById("qrcode").innerHTML =
+        "<p style='color:red; font-size:22px;'>Ошибка: отсутствует ссылка профиля</p>";
+    throw new Error("profile_link отсутствует");
+}
+
+document.getElementById("qr-link").href = profileLink;
+
+new QRCode(document.getElementById("qrcode"), {
+    text: profileLink,
+    width: 256,
+    height: 256
+});
+
+/* ===========================
+   Лидерборд
+=========================== */
+async function loadLeaderboard() {
+    const usersCol = collection(db, "users");
+    const snap = await getDocs(usersCol);
+
+    let leaders = [];
+
+    snap.forEach(doc => {
+        const d = doc.data();
+        leaders.push({
+            name: d.name,
+            scans: d.scans || 0,
+            tokens: (d.scans || 0) * 10
+        });
+    });
+
+    leaders.sort((a, b) => b.tokens - a.tokens);
+    leaders = leaders.slice(0, 3);
+
+    const lb = document.getElementById("lb-container");
+    lb.innerHTML = "";
+
+    leaders.forEach((user, i) => {
+        const medal = ["🥇", "🥈", "🥉"][i] || "";
+        const div = document.createElement("div");
+        div.className = "lb-item";
+        div.innerHTML = `${medal} ${user.name} — ${user.tokens}💰 (${user.scans} шт.)`;
+        lb.appendChild(div);
+    });
+}
+
+loadLeaderboard();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+/* Общие стили */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Inter", sans-serif;
+    background-color: #f7d84b;
+    overflow-x: hidden;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-top: 40px;
+}
+
+/* Логотип */
+.logo {
+    width: 45%;
+    max-width: 350px;
+    opacity: 0.85;
+    filter: drop-shadow(0 8px 15px rgba(0,0,0,0.15));
+    margin-bottom: 40px;
+}
+
+/* Кнопки меню */
+.action-btn {
+    background: white;
+    border: 2px solid #222;
+    border-radius: 40px;
+    padding: 18px 40px;
+    margin: 15px 0;
+    font-size: 30px;
+    cursor: pointer;
+    width: 70%;
+    max-width: 550px;
+    transition: 0.2s;
+}
+
+/* Welcome overlay */
+#welcome-overlay {
+    position: fixed;
+    inset: 0;
+    backdrop-filter: blur(25px);
+    background: rgba(255,255,255,0.08);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity .6s ease;
+}
+
+/* Welcome card */
+.welcome-card {
+    width: 75%;
+    max-width: 600px;
+    height: 520px;  /* <-- фиксируем высоту */
+    padding: 40px 50px;
+    border-radius: 35px;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+    backdrop-filter: blur(20px);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+/* Заголовок welcome */
+.welcome-title {
+    font-family: "Jacques Francois Shadow", serif;
+    font-size: 80px;
+    height: 120px;             /* фиксированная высота области */
+    line-height: 120px;
+    color: white;
+    text-align: center;
+
+    white-space: nowrap;       /* ❗ запрещаем перенос */
+    transform-origin: center;  /* масштабирование вокруг центра */
+
+    opacity: 0;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    0% { opacity: 0; filter: blur(12px); transform: translateY(20px); }
+    100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    0% { opacity: 1; filter: blur(0); transform: translateY(0); }
+    100% { opacity: 0; filter: blur(12px); transform: translateY(-20px); }
+}
+
+/* Поле ввода имени */
+.welcome-input {
+    width: calc(100% - 40px);  /* одинаковый отступ слева/справа */
+    margin: 30px auto 0 auto;
+    padding: 22px;
+    font-size: 32px;
+    border-radius: 30px;
+
+    border: none;
+    outline: none;
+
+    display: block;            /* Центрирование */
+    text-align: center;
+
+    background: rgba(255,255,255,0.7);
+}
+
+/* Кнопка */
+.welcome-btn {
+    margin-top: 30px;
+    padding: 20px;
+    font-size: 30px;
+    border-radius: 25px;
+    background: white;
+    border: none;
+    cursor: pointer;
+}
+
+/* Масштабирование текста если он слишком широкий */
+.welcome-title.scaled {
+    transform: scaleX(var(--scale, 1));
+}

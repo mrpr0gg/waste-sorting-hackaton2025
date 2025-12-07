@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Админ-панель Оджетто</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      background: #f7d84b;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 30px 10px;
+    }
+
+    .admin-wrap {
+      width: 100%;
+      max-width: 1100px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 28px;
+      padding: 25px 25px 35px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 36px;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      text-align: center;
+      margin-bottom: 20px;
+      opacity: 0.8;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1.8fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.75);
+      border-radius: 20px;
+      padding: 18px 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 22px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .metric {
+      background: rgba(255,255,255,0.9);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+
+    .metric span {
+      display: block;
+    }
+
+    .metric .label {
+      opacity: 0.7;
+      margin-bottom: 3px;
+    }
+
+    .metric .value {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .leaderboard-item {
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      font-size: 15px;
+    }
+
+    .leader-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .crown {
+      display: inline-block;
+      animation: crownPulse 1.5s infinite ease-in-out;
+    }
+
+    @keyframes crownPulse {
+      0%   { transform: translateY(0) scale(1);   text-shadow: 0 0 4px rgba(255,215,0,0.6);}
+      50%  { transform: translateY(-2px) scale(1.15); text-shadow: 0 0 16px rgba(255,215,0,1);}
+      100% { transform: translateY(0) scale(1);   text-shadow: 0 0 4px rgba(255,215,0,0.6);}
+    }
+
+    .admin-badge {
+      background: #222;
+      color: #f7d84b;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 11px;
+      margin-left: 6px;
+    }
+
+    .users-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .users-header h2 {
+      margin: 0;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.15);
+      font-size: 14px;
+      outline: none;
+    }
+
+    .users-list {
+      max-height: 360px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .user-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.9);
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    .user-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+    }
+
+    .user-name-link {
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      text-align: left;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #222;
+    }
+
+    .user-secondary {
+      font-size: 12px;
+      opacity: 0.75;
+    }
+
+    .user-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .toggle-admin-btn {
+      font-size: 11px;
+      border-radius: 999px;
+      padding: 4px 8px;
+      border: 1px solid #222;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .toggle-admin-btn.is-admin {
+      background: #222;
+      color: #f7d84b;
+    }
+
+    .small-note {
+      font-size: 11px;
+      opacity: 0.65;
+      margin-top: 6px;
+    }
+
+    /* Оверлей входа (темнение + лого) */
+    .gate {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #f7d84b;
+      z-index: 999;
+      animation: gateFade 1.8s ease forwards;
+    }
+
+    .gate-logo {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      opacity: 0;
+      animation: logoAppear 1.5s ease forwards 0.3s;
+    }
+
+    .gate-sub {
+      margin-top: 10px;
+      font-size: 14px;
+      opacity: 0;
+      animation: logoAppear 1.5s ease forwards 0.6s;
+    }
+
+    @keyframes gateFade {
+      0%   { opacity: 0; }
+      20%  { opacity: 1; }
+      80%  { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; }
+    }
+
+    @keyframes logoAppear {
+      0%   { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .no-access {
+      text-align: center;
+      margin-top: 50px;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .no-access small {
+      display: block;
+      margin-top: 10px;
+      font-size: 13px;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .back-btn {
+    margin-top: 25px;
+    padding: 12px 26px;
+    background: #ffffff;
+    border-radius: 999px;
+    border: 2px solid #222;
+    font-size: 18px;
+    cursor: pointer;
+    transition: 0.25s;
+    }
+
+    .back-btn:hover {
+    transform: scale(1.06);
+    background: #fff7bb;
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="admin-wrap" id="adminWrap" style="display:none;">
+  <h1>Админ-панель Оджетто</h1>
+  <div class="subtitle" id="adminInfo"></div>
+
+  <div class="grid">
+    <!-- Левая колонка: live-метрики + лидерборд -->
+    <div>
+      <div class="card">
+        <h2>Живая статистика</h2>
+        <div class="metrics">
+          <div class="metric">
+            <span class="label">Всего пользователей</span>
+            <span class="value" id="mUsers">—</span>
+          </div>
+          <div class="metric">
+            <span class="label">Всего сканов</span>
+            <span class="value" id="mScans">—</span>
+          </div>
+          <div class="metric">
+            <span class="label">Сканы за 24 часа</span>
+            <span class="value" id="mScans24h">—</span>
+          </div>
+          <div class="metric">
+            <span class="label">Топ-контейнер</span>
+            <span class="value" id="mTopContainer">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:15px;">
+        <h2>Лидеры недели</h2>
+        <div id="leadersList">
+          <div style="font-size:14px; opacity:0.7;">Нет данных</div>
+        </div>
+        <div class="small-note">
+          👑 Корона у пользователя с наибольшим количеством оджеттонов.
+        </div>
+      </div>
+    </div>
+
+    <!-- Правая колонка: список пользователей -->
+    <div class="card">
+      <div class="users-header">
+        <h2>Пользователи</h2>
+        <input id="userSearch" class="search-input" placeholder="Поиск по имени...">
+      </div>
+      <div class="users-list" id="usersList">
+        <div style="font-size:14px; opacity:0.7;">Загрузка списка пользователей...</div>
+      </div>
+      <div class="small-note">
+        Нажмите на имя пользователя, чтобы открыть его профиль в новой вкладке.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="noAccess" class="no-access" style="display:none;">
+  <small>Вход только для администраторов. Попросите Владислава добавить вас в список админов.</small>
+
+  <button class="back-btn" onclick="location.href='index.html'">← Назад</button>
+</div>
+
+
+<!-- Оверлей входа -->
+
+<div id="gate" class="gate">
+    <img src="logo2.png" alt="Logo" class="gate-logo">
+    <h1 class="gate-logo">оджетто</h1>
+    <p class="gate-sub">Загрузка панели администрации…</p>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    onSnapshot,
+    doc,
+    getDoc,
+    updateDoc
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAzRjvFDkmmL509Z3ytx9Dibl4WE9cF3s0",
+    authDomain: "mysorstat.firebaseapp.com",
+    projectId: "mysorstat",
+    storageBucket: "mysorstat.firebasestorage.app",
+    messagingSenderId: "672693845408",
+    appId: "1:672693845408:web:ecbb22b9b857aa2be2f8c5",
+    measurementId: "G-Z9S58B91BP"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  const adminWrap  = document.getElementById("adminWrap");
+  const noAccessEl = document.getElementById("noAccess");
+  const adminInfo  = document.getElementById("adminInfo");
+  const gate       = document.getElementById("gate");
+
+  const mUsers        = document.getElementById("mUsers");
+  const mScans        = document.getElementById("mScans");
+  const mScans24h     = document.getElementById("mScans24h");
+  const mTopContainer = document.getElementById("mTopContainer");
+  const leadersList   = document.getElementById("leadersList");
+  const usersListEl   = document.getElementById("usersList");
+  const searchInput   = document.getElementById("userSearch");
+
+  let allUsers = [];
+
+  function normalizeName(name) {
+    return (name || "").toLowerCase().trim();
+  }
+
+  function showNoAccess(msg) {
+    adminWrap.style.display  = "none";
+    noAccessEl.style.display = "block";
+    if (msg) {
+      noAccessEl.firstChild.textContent = msg;
+    }
+  }
+
+  async function checkAccessAndInit() {
+    const username = localStorage.getItem("username");
+    if (!username) {
+      showNoAccess("Сначала зайдите в приложение и введите своё имя.");
+      gate.style.display = "none";
+      return;
+    }
+
+    const id = normalizeName(username);
+    const ref = doc(db, "users", id);
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) {
+      showNoAccess("Ваша учётная запись не найдена в базе.");
+      gate.style.display = "none";
+      return;
+    }
+
+    const data = snap.data() || {};
+
+    // Владислав всегда админ + пометим в базе
+    let isAdmin = data.isAdmin === true || id === "владислав";
+
+    if (id === "владислав" && data.isAdmin !== true) {
+      try {
+        await updateDoc(ref, { isAdmin: true });
+      } catch (e) {
+        console.warn("Не удалось обновить isAdmin для Владислава:", e);
+      }
+    }
+
+    if (!isAdmin) {
+      showNoAccess("У вас нет прав администратора.");
+      gate.style.display = "none";
+      return;
+    }
+
+    adminInfo.textContent = `Вы вошли как администратор: ${data.name || username}`;
+    adminWrap.style.display = "block";
+
+    // небольшой таймаут, чтобы анимация «ворот» отыграла
+    setTimeout(() => {
+      gate.style.display = "none";
+    }, 1800);
+
+    initLiveListeners();
+  }
+
+  function getContainerPrettyName(raw) {
+    if (!raw) return "—";
+    const t = raw.toLowerCase();
+    if (t.includes("жёлт") || t.includes("желт")) return "🟡 жёлтый контейнер";
+    if (t.includes("син")) return "🔵 синий контейнер";
+    if (t.includes("зел")) return "🟢 зелёный контейнер";
+    if (t.includes("металл")) return "⚪ металлический контейнер";
+    if (t.includes("несорт") || t.includes("чёрн") || t.includes("черн")) return "⚫ несортируемые отходы";
+    return raw;
+  }
+
+  function renderFromUsersSnapshot(docs) {
+    allUsers = [];
+    let totalUsers = 0;
+    let totalScans = 0;
+    let scans24h   = 0;
+    const containerStats = {};
+
+    const now = Date.now();
+    const dayAgo = now - 24 * 60 * 60 * 1000;
+
+    docs.forEach(docSnap => {
+      const d = docSnap.data() || {};
+      const id = docSnap.id;
+
+      const scans = d.scans || 0;
+      totalUsers += 1;
+      totalScans += scans;
+
+      const items = Array.isArray(d.items) ? d.items : [];
+      for (const it of items) {
+        if (it && typeof it.createdAt === "number" && it.createdAt >= dayAgo) {
+          scans24h += 1;
+        }
+        const cont = (it && it.container) || "";
+        if (cont) {
+          containerStats[cont] = (containerStats[cont] || 0) + 1;
+        }
+      }
+
+      allUsers.push({
+        id,
+        name: d.name || id,
+        scans,
+        tokens: scans * 10,
+        isAdmin: d.isAdmin === true
+      });
+    });
+
+    // метрики
+    mUsers.textContent    = totalUsers;
+    mScans.textContent    = totalScans;
+    mScans24h.textContent = scans24h;
+
+    let topContainerLabel = "—";
+    let maxCnt = 0;
+    for (const [cont, cnt] of Object.entries(containerStats)) {
+      if (cnt > maxCnt) {
+        maxCnt = cnt;
+        topContainerLabel = cont;
+      }
+    }
+    mTopContainer.textContent = maxCnt ? getContainerPrettyName(topContainerLabel) : "—";
+
+    // Лидерборд
+    const sorted = [...allUsers].sort((a,b) => b.tokens - a.tokens);
+    const top3 = sorted.slice(0,3);
+    leadersList.innerHTML = "";
+
+    if (!top3.length) {
+      leadersList.innerHTML = `<div style="font-size:14px; opacity:0.7;">Нет данных</div>`;
+    } else {
+      top3.forEach((u, idx) => {
+        const div = document.createElement("div");
+        div.className = "leaderboard-item";
+
+        const left = document.createElement("div");
+        left.className = "leader-left";
+
+        let medal = "🥉";
+        if (idx === 0) medal = "🥇";
+        if (idx === 1) medal = "🥈";
+
+        const medalSpan = document.createElement("span");
+        medalSpan.textContent = medal;
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = u.name;
+
+        if (idx === 0) {
+          const crown = document.createElement("span");
+          crown.className = "crown";
+          crown.textContent = "👑";
+          left.appendChild(crown);
+        }
+
+        left.appendChild(medalSpan);
+        left.appendChild(nameSpan);
+
+        const right = document.createElement("div");
+        right.innerHTML = `${u.tokens} 🪙 <span style="opacity:0.7;">(${u.scans} шт.)</span>`;
+
+        div.appendChild(left);
+        div.appendChild(right);
+
+        leadersList.appendChild(div);
+      });
+    }
+
+    // Список пользователей
+    renderUsersList();
+  }
+
+  function renderUsersList() {
+    const term = normalizeName(searchInput.value || "");
+    const filtered = term
+      ? allUsers.filter(u => normalizeName(u.name).includes(term) || u.id.includes(term))
+      : allUsers;
+
+    usersListEl.innerHTML = "";
+
+    if (!filtered.length) {
+      usersListEl.innerHTML = `<div style="font-size:14px; opacity:0.7;">Никого не найдено</div>`;
+      return;
+    }
+
+    filtered
+      .sort((a,b) => b.scans - a.scans)
+      .forEach(u => {
+        const row = document.createElement("div");
+        row.className = "user-row";
+
+        const main = document.createElement("div");
+        main.className = "user-main";
+
+        const nameBtn = document.createElement("button");
+        nameBtn.className = "user-name-link";
+        nameBtn.textContent = u.name;
+        nameBtn.addEventListener("click", () => {
+          const url = `profile.html?id=${encodeURIComponent(u.id)}`;
+          window.open(url, "_blank");
+        });
+
+        const secondary = document.createElement("div");
+        secondary.className = "user-secondary";
+        secondary.textContent = `${u.scans} сканов • ${u.tokens} оджеттонов`;
+
+        main.appendChild(nameBtn);
+        main.appendChild(secondary);
+
+        const actions = document.createElement("div");
+        actions.className = "user-actions";
+
+        if (u.isAdmin) {
+          const badge = document.createElement("div");
+          badge.className = "admin-badge";
+          badge.textContent = "Администратор";
+          actions.appendChild(badge);
+        }
+
+        const btn = document.createElement("button");
+        btn.className = "toggle-admin-btn" + (u.isAdmin ? " is-admin" : "");
+        btn.textContent = u.isAdmin ? "Снять права" : "Сделать админом";
+
+        btn.addEventListener("click", async () => {
+          try {
+            const ref = doc(db, "users", u.id);
+            await updateDoc(ref, { isAdmin: !u.isAdmin });
+          } catch (e) {
+            alert("Не удалось обновить права администратора.");
+            console.error(e);
+          }
+        });
+
+        actions.appendChild(btn);
+
+        row.appendChild(main);
+        row.appendChild(actions);
+        usersListEl.appendChild(row);
+      });
+  }
+
+  function initLiveListeners() {
+    const usersCol = collection(db, "users");
+
+    // Live-слушатель всех пользователей
+    onSnapshot(usersCol, (snap) => {
+      renderFromUsersSnapshot(snap.docs);
+    });
+
+    searchInput.addEventListener("input", () => {
+      renderUsersList();
+    });
+  }
+
+  checkAccessAndInit();
+</script>
+
+</body>
+</html>
